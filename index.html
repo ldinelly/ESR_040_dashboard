@@ -44,7 +44,7 @@
 
 <script>
 
-    var carTypeChart = dc.rowChart("#carType"),
+    var carTypeChart = dc.barChart("#carType"),
         gateNameChart = dc.rowChart("#gateName"),
         visCount = dc.dataCount(".dc-data-count"),
         visTable = dc.dataTable(".dc-data-table");
@@ -72,6 +72,11 @@
 
 
         carTypeChart
+            .width(768)
+            .height(480)
+            .x(d3.scaleLinear().domain([6,20]))
+            .brushOn(false)
+            .yAxisLabel("This is the Y Axis!")
             .dimension(carTypeDim)
             .group(carTypeGroup)
             .elasticX(true);
@@ -100,7 +105,8 @@
                 "Nome",
                 "CNPJ",
                 "Atraso",
-                "Total Pago"
+                "Total Pago",
+                "Timestamp"
             ]);
 
         dc.renderAll();
