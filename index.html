@@ -6,8 +6,8 @@
 
     <link rel="stylesheet" href="dc.css">
     <link rel="stylesheet" type="text/css" href="bootstrap.css">
-
 </head>
+
 <body>
 <h1>Antecipação de Recebíveis</h1>
 
@@ -19,6 +19,7 @@
 
     <div class="clearfix"></div>
 </div>
+
 
 <div id="totalEmCustodia">
     <strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Valor Custodiado</strong>
@@ -45,7 +46,7 @@
 <script>
 
     var receitaDoMesChart = dc.barChart("#receitaDoMes"),
-        totalEmCustodiaChart = dc.rowChart("#totalEmCustodia"),
+        totalEmCustodiaChart = dc.barChart("#totalEmCustodia"),
         visCount = dc.dataCount(".dc-data-count"),
         visTable = dc.dataTable(".dc-data-table");
 
@@ -55,15 +56,15 @@
     d3.csv(url).then(function (data) {
 
         data.forEach(function (d) {
-            d.Timestamp = new Date(d.Timestamp);
+            d.date = new Date(d.date);
         });
 
         var ndx = crossfilter(data);
         var all = ndx.groupAll();
 
-        var receitaDoMesDim = ndx.dimension(function (d) { return d["Atraso"]; });
-        var totalEmCustodiaDim = ndx.dimension(function (d) { return d["Total Pago"]; });
-        var dateDim = ndx.dimension(function (d) { return d.Timestamp; });
+        var receitaDoMesDim = ndx.dimension(function (d) { return d3.timeYear(d["date"]).getFullYear() });
+        var totalEmCustodiaDim = ndx.dimension(function (d) {  return d3.timeYear(d["date"]).getFullYear()  });
+        var dateDim = ndx.dimension(function (d) { return d.date; });
 
         var receitaDoMesGroup = receitaDoMesDim.group();
         var totalEmCustodiaGroup = totalEmCustodiaDim.group();
@@ -78,10 +79,12 @@
             .elasticX(true);
 
         totalEmCustodiaChart
+    .x(d3.scaleLinear().domain([6,20]))
+            .brushOn(false)
+            .yAxisLabel("Valor Custodiado")
             .dimension(totalEmCustodiaDim)
             .group(totalEmCustodiaGroup)
-            .elasticX(true)
-            .data(function (group) { return group.top(5); });
+            .elasticX(true);
 
         visCount
             .dimension(ndx)
@@ -92,11 +95,8 @@
             // Data table does not use crossfilter group but rather a closure
             // as a grouping function
             .group(function (d) {
-                var dateFormatSpecifier = '%m/%d/%Y';
-                var dateFormat = d3.timeFormat(dateFormatSpecifier);
-                var dateFormatParser = d3.timeParse(dateFormatSpecifier);
                 var format = d3.format('02d');
-                return d.Timestamp.getFullYear() + '/' + format((d.Timestamp.getMonth() + 1));
+                return d.date.getFullYear() + '/' + format((d.date.getMonth() + 1));
             })
             .columns([ //Colunas que aparecem na tabela da dash
                 "Ord",
@@ -104,7 +104,7 @@
                 "CNPJ",
                 "Atraso",
                 "Total Pago",
-                "Timestamp"
+                "date"
             ]);
 
         dc.renderAll();
