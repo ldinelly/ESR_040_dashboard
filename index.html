@@ -11,9 +11,17 @@
 <body>
 <h1>Antecipação de Recebíveis</h1>
 
+<br/>
 
+<div id='year-selector-container'>
+    Filtrar Por Ano:
+    <span id='year-span'>2007</span>
+    <input id='year-slider' class='year-range' type='range' min='2007' max='2016' value='2007'>
+
+</div>
+<br/>
 <div id="receitaDoMes">
-    <strong>Acompanhamento: <br/>Operações de Desconto de Duplicatas</strong>
+    <strong>perações de Desconto de Duplicatas</strong>
     <span class="reset" style="display: none;">Selected: <span class="filter"></span></span>
     <a class="reset" href="javascript:receitaDoMesChart.filterAll();dc.redrawAll();" style="display: none;">reset</a>
 
@@ -52,6 +60,19 @@
 
 
     var url = "data.csv";
+
+////slider filtro por ano
+    var updateSlider = function() {
+        var slider = document.getElementById('year-slider');
+        var output = document.getElementById('year-span');
+        yearSelected = slider.value;
+        output.innerHTML = yearSelected;
+        console.log('yearSelected:', yearSelected);
+        d3.selectAll('.svgG').remove();
+        drawDonut(getDataFromYear(yearSelected));
+    }
+    d3.select('#year-slider').on('input', updateSlider);
+
 
     d3.csv(url).then(function (data) {
 
