@@ -66,10 +66,10 @@
 				var ndx = crossfilter(data),
 					all = ndx.groupAll(),
 					runDimension        = ndx.dimension(function(d) {return +d.Atraso;}),
-					speedSumGroup       = runDimension.group().reduceSum(function(d) {return d.Pago * d.Atraso / 100;});
+					speedSumGroup       = runDimension.group().reduceSum(function(d) {return d.Pago/1000 ;});
 
 				receitaDoMesChart
-					.x(d3.scaleLinear().domain([1,5]))
+					.x(d3.scaleLinear().domain([0,6]))
 					.brushOn(false)
 					.yAxisLabel("Desconto de Duplicatas")
 					.dimension(runDimension)
@@ -77,7 +77,7 @@
 					.elasticX(true);
 
 				totalEmCustodiaChart
-					.x(d3.scaleLinear().domain([1,5]))
+					.x(d3.scaleLinear().domain([0,6]))
 					.brushOn(false)
 					.yAxisLabel("Valor Custodiado")
 					.dimension(runDimension)
