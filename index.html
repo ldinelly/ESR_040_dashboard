@@ -22,7 +22,7 @@
 
 
 		<div id="totalEmCustodia">
-			<strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Valor Custodiado</strong>
+			<strong>Valor Custodiado</strong>
 			<span class="reset" style="display: none;">Selected: <span class="filter"></span></span>
 			<a class="reset" href="javascript:totalEmCustodiaChart.filterAll();dc.redrawAll();" style="display: none;">reset</a>
 
@@ -52,38 +52,36 @@
 
 
 			var url = "data.csv";
+			var dateFormatSpecifier = '%m/%d/%Y';
+			var dateFormat = d3.timeFormat(dateFormatSpecifier);
+			var dateFormatParser = d3.timeParse(dateFormatSpecifier);
 
 			d3.csv(url).then(function (data) {
 
 				data.forEach(function (d) {
-					d.date = new Date(d.date);
+					d.dd = dateFormatParser(d.date);
+					d.month = d3.timeMonth(d.dd);
 				});
 
-				var ndx = crossfilter(data);
-				var all = ndx.groupAll();
-
-				var receitaDoMesDim = ndx.dimension(function (d) { return d3.timeYear(d["date"]).getFullYear() });
-				var totalEmCustodiaDim = ndx.dimension(function (d) {  return d3.timeYear(d["date"]).getFullYear()  });
-				var dateDim = ndx.dimension(function (d) { return d.date; });
-
-				var receitaDoMesGroup = receitaDoMesDim.group();
-				var totalEmCustodiaGroup = totalEmCustodiaDim.group();
-				var dateGroup = dateDim.group();
+				var ndx = crossfilter(data),
+					all = ndx.groupAll(),
+					runDimension        = ndx.dimension(function(d) {return +d.Atraso;}),
+					speedSumGroup       = runDimension.group().reduceSum(function(d) {return d.Pago * d.Atraso / 100;});
 
 				receitaDoMesChart
-					.x(d3.scaleLinear().domain([6,20]))
+					.x(d3.scaleLinear().domain([1,5]))
 					.brushOn(false)
 					.yAxisLabel("Desconto de Duplicatas")
-					.dimension(receitaDoMesDim)
-					.group(receitaDoMesGroup)
+					.dimension(runDimension)
+					.group(speedSumGroup)
 					.elasticX(true);
 
 				totalEmCustodiaChart
-					.x(d3.scaleLinear().domain([6,20]))
+					.x(d3.scaleLinear().domain([1,5]))
 					.brushOn(false)
 					.yAxisLabel("Valor Custodiado")
-					.dimension(totalEmCustodiaDim)
-					.group(totalEmCustodiaGroup)
+					.dimension(runDimension)
+					.group(speedSumGroup)
 					.elasticX(true);
 
 				visCount
@@ -91,13 +89,10 @@
 					.group(all);
 
 				visTable
-					.dimension(dateDim)
+					.dimension(runDimension)
 					// Data table does not use crossfilter group but rather a closure
 					// as a grouping function
-					.group(function (d) {
-						var format = d3.format('02d');
-						return d.date.getFullYear() + '/' + format((d.date.getMonth() + 1));
-					})
+					.group(speedSumGroup)
 					.columns([ //Colunas que aparecem na tabela da dash
 						"Ord",
 						"Nome",

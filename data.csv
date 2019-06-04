@@ -1,10 +1,10 @@
-date,Ord,Atraso,Total Pago,Nome,CNPJ, Unidade, Produto
-2015-05-01,25,5,R$49000, Luana Cristina Dinelly Lopes,12345678910
-2014-05-02,00,2,R$39000,Levi Cauê André Martins,12345678910
-2013-05-03,25,5,R$34000,Priscila Marcos Vinicius Erick Novaes,12345678910
-2012-05-04,18,1,R$54000,Sandra Lavínia Farias,12345678910
-2011-05-05,25,5,R$40000,Jéssica Pietra Caroline da Cunha,12345678910
-2010-05-06,18,1,R$20000,Kauê Pedro Vitor Novaes,12345678910
-2009-05-07,18,1,R$12000,Fabiana Beatriz Helena Duarte,12345678910
-2008-05-08,8,3,R$78000,Igor Ruan Theo Vieira,12345678910
-2007-05-09,18,1,R$30000,Jorge Marcos Vinicius Erick Novaes,12345678910
+date,Ord,Atraso,Pago,Nome,CNPJ
+2019-05-01,25,5,49000,Luana Cristina Dinelly Lopes,12345678910
+2019-05-02,00,2,39000,Levi Cauê André Martins,12345678910
+2019-05-03,25,5,34000,Priscila Marcos Vinicius Erick Novaes,12345678910
+2019-05-04,18,1,54000,Sandra Lavínia Farias,12345678910
+2019-05-05,25,5,40000,Jéssica Pietra Caroline da Cunha,12345678910
+2019-05-06,18,1,20000,Kauê Pedro Vitor Novaes,12345678910
+2019-05-07,18,1,12000,Fabiana Beatriz Helena Duarte,12345678910
+2019-05-08,8,3,78000,Igor Ruan Theo Vieira,12345678910
+2019-05-09,18,1,30000,Jorge Marcos Vinicius Erick Novaes,12345678910
