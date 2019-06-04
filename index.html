@@ -1,115 +1,107 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
+		<title>dc.js - Dimensional Charting Javascript Library</title>
+
 		<meta charset="UTF-8">
-		<title>Antecipação de Recebíveis</title>
 
-		<link rel="stylesheet" href="dc.css">
-		<link rel="stylesheet" type="text/css" href="bootstrap.css">
+		<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+		<link rel="stylesheet" type="text/css" href="css/dc.css"/>
+
+		<style>
+			#monthly-volume-chart g.y {
+				display: none;
+			}
+			#logo {
+				margin-right: 2em;
+				margin-top: 2em;
+			}
+		</style>
 	</head>
-
 	<body>
-		<h1>Antecipação de Recebíveis</h1>
 
+		<div class="container">
+			<h2>Nasdaq 100 Index 1985/11/01-2012/06/29</h2>
 
-		<div id="receitaDoMes">
-			<strong>Acompanhamento: <br/>Operações de Desconto de Duplicatas</strong>
-			<span class="reset" style="display: none;">Selected: <span class="filter"></span></span>
-			<a class="reset" href="javascript:receitaDoMesChart.filterAll();dc.redrawAll();" style="display: none;">reset</a>
+			<div class="row">
+				<div id="yearly-bubble-chart" class="dc-chart">
+					<strong>Yearly Performance</strong> (radius: fluctuation/index ratio, color: gain/loss)
+					<a class="reset" href="javascript:yearlyBubbleChart.filterAll();dc.redrawAll();"
+					   style="display: none;">reset</a>
 
-			<div class="clearfix"></div>
-		</div>
-
-
-		<div id="totalEmCustodia">
-			<strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Valor Custodiado</strong>
-			<span class="reset" style="display: none;">Selected: <span class="filter"></span></span>
-			<a class="reset" href="javascript:totalEmCustodiaChart.filterAll();dc.redrawAll();" style="display: none;">reset</a>
-
-			<div class="clearfix"></div>
-		</div>
-
-		<div>
-			<div class="dc-data-count">
-				<span class="filter-count"></span> selecionado de <span class="total-count"></span> dados. | <a
-					href="javascript:dc.filterAll(); dc.renderAll();">Resetar Tudo</a>
+					<div class="clearfix"></div>
+				</div>
 			</div>
+
+			<div class="row">
+				<div id="gain-loss-chart">
+					<strong>Days by Gain/Loss</strong>
+					<a class="reset" href="javascript:gainOrLossChart.filterAll();dc.redrawAll();" style="display: none;">reset</a>
+
+					<div class="clearfix"></div>
+				</div>
+
+				<div id="quarter-chart">
+					<strong>Quarters</strong>
+					<a class="reset" href="javascript:quarterChart.filterAll();dc.redrawAll();" style="display: none;">reset</a>
+
+					<div class="clearfix"></div>
+				</div>
+
+				<div id="day-of-week-chart">
+					<strong>Day of Week</strong>
+					<a class="reset" href="javascript:dayOfWeekChart.filterAll();dc.redrawAll();" style="display: none;">reset</a>
+
+					<div class="clearfix"></div>
+				</div>
+
+				<div id="fluctuation-chart">
+					<strong>Days by Fluctuation(%)</strong>
+					<span class="reset" style="display: none;">range: <span class="filter"></span></span>
+					<a class="reset" href="javascript:fluctuationChart.filterAll();dc.redrawAll();" style="display: none;">reset</a>
+
+					<div class="clearfix"></div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div id="monthly-move-chart">
+					<strong>Monthly Index Abs Move & Volume/500,000 Chart</strong>
+					<span class="reset" style="display: none;">range: <span class="filter"></span></span>
+					<a class="reset" href="javascript:moveChart.filterAll();volumeChart.filterAll();dc.redrawAll();"
+					   style="display: none;">reset</a>
+
+					<div class="clearfix"></div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div id="monthly-volume-chart">
+				</div>
+				<p class="muted pull-right" style="margin-right: 15px;">select a time range to zoom in</p>
+			</div>
+
+			<div class="row">
+				<div>
+					<div class="dc-data-count">
+						<span class="filter-count"></span> selected out of <span class="total-count"></span> records | <a
+							href="javascript:dc.filterAll(); dc.renderAll();">Reset All</a>
+					</div>
+				</div>
+				<table class="table table-hover dc-data-table">
+				</table>
+			</div>
+
+			<div class="clearfix"></div>
 		</div>
-		<table class="table table-hover dc-data-table">
-		</table>
 
 
-		<script src="https://d3js.org/d3.v5.js"></script>
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/crossfilter2/1.4.7/crossfilter.js"></script>
-		<script src="http://unpkg.com/dc@3/dc.js"></script>
+		<script type="text/javascript" src="js/promise-polyfill.js"></script>
+		<script type="text/javascript" src="js/fetch.umd.js"></script>
+		<script type="text/javascript" src="js/d3.js"></script>
+		<script type="text/javascript" src="js/crossfilter.js"></script>
+		<script type="text/javascript" src="js/dc.js"></script>
 
-		<script>
-
-			var receitaDoMesChart = dc.barChart("#receitaDoMes"),
-				totalEmCustodiaChart = dc.barChart("#totalEmCustodia"),
-				visCount = dc.dataCount(".dc-data-count"),
-				visTable = dc.dataTable(".dc-data-table");
-
-
-			var url = "data.csv";
-
-			d3.csv(url).then(function (data) {
-
-				data.forEach(function (d) {
-					d.date = new Date(d.date);
-				});
-
-				var ndx = crossfilter(data);
-				var all = ndx.groupAll();
-
-				var receitaDoMesDim = ndx.dimension(function (d) { return d3.timeYear(d["date"]).getFullYear() });
-				var totalEmCustodiaDim = ndx.dimension(function (d) {  return d3.timeYear(d["date"]).getFullYear()  });
-				var dateDim = ndx.dimension(function (d) { return d.date; });
-
-				var receitaDoMesGroup = receitaDoMesDim.group();
-				var totalEmCustodiaGroup = totalEmCustodiaDim.group();
-				var dateGroup = dateDim.group();
-
-				receitaDoMesChart
-					.x(d3.scaleLinear().domain([6,20]))
-					.brushOn(false)
-					.yAxisLabel("Desconto de Duplicatas")
-					.dimension(receitaDoMesDim)
-					.group(receitaDoMesGroup)
-					.elasticX(true);
-
-				totalEmCustodiaChart
-					.x(d3.scaleLinear().domain([6,20]))
-					.brushOn(false)
-					.yAxisLabel("Valor Custodiado")
-					.dimension(totalEmCustodiaDim)
-					.group(totalEmCustodiaGroup)
-					.elasticX(true);
-
-				visCount
-					.dimension(ndx)
-					.group(all);
-
-				visTable
-					.dimension(dateDim)
-					// Data table does not use crossfilter group but rather a closure
-					// as a grouping function
-					.group(function (d) {
-						var format = d3.format('02d');
-						return d.date.getFullYear() + '/' + format((d.date.getMonth() + 1));
-					})
-					.columns([ //Colunas que aparecem na tabela da dash
-						"Ord",
-						"Nome",
-						"CNPJ",
-						"Atraso",
-						"Total Pago",
-						"date"
-					]);
-
-				dc.renderAll();
-
-			});
-		</script>
+		<script type="text/javascript" src="graf.js"></script>
 	</body>
 </html>
