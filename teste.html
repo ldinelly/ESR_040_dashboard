@@ -43,12 +43,11 @@
             </div>
 
 
-            <script type="text/javascript" src="../js/promise-polyfill.js"></script>
-            <script type="text/javascript" src="../js/fetch.umd.js"></script>
-            <script type="text/javascript" src="../js/d3.js"></script>
-            <script type="text/javascript" src="../js/crossfilter.js"></script>
-            <script type="text/javascript" src="../js/dc.js"></script>
-            <script type="text/javascript" src="../js/FileSaver.js"></script>
+            <script type="text/javascript" src="js/promise-polyfill.js"></script>
+            <script type="text/javascript" src="js/fetch.umd.js"></script>
+            <script type="text/javascript" src="js/d3.js"></script>
+            <script type="text/javascript" src="js/crossfilter.js"></script>
+            <script type="text/javascript" src="js/dc.js"></script>
             <script type="text/javascript">
                 var yearRingChart   = dc.pieChart("#chart-ring-year"),
                         spendHistChart  = dc.barChart("#chart-hist-spend"),
@@ -115,24 +114,6 @@
                                     return Math.floor((d.Spent / allDollars.value()) * 100) + '%';
                                 }
                             }]);
-                d3.select('#download')
-                        .on('click', function() {
-                            var data = nameDim.top(Infinity);
-                            if(d3.select('#download-type input:checked').node().value==='table') {
-                                data = data.sort(function(a, b) {
-                                    return table.order()(table.sortBy()(a), table.sortBy()(b));
-                                });
-                                data = data.map(function(d) {
-                                    var row = {};
-                                    table.columns().forEach(function(c) {
-                                        row[table._doColumnHeaderFormat(c)] = table._doColumnValueFormat(c, d);
-                                    });
-                                    return row;
-                                });
-                            }
-                            var blob = new Blob([d3.csvFormat(data)], {type: "text/csv;charset=utf-8"});
-                            saveAs(blob, 'data.csv');
-                        });
                 dc.renderAll();
             </script>
 
