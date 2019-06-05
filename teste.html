@@ -3,8 +3,8 @@
     <head>
         <title>dc.js - Downloading Data Table Contents</title>
         <meta charset="UTF-8">
-        <link rel="stylesheet" type="text/css" href="../css/bootstrap.min.css">
-        <link rel="stylesheet" type="text/css" href="../css/dc.css"/>
+        <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+        <link rel="stylesheet" type="text/css" href="css/dc.css"/>
         <style>
             #table td {
                 padding-left: 10px;
@@ -14,7 +14,6 @@
     <body>
 
         <div class="container">
-            <script type="text/javascript" src="header.js"></script>
             <div id="chart-ring-year" style="width:300px; height:330px">
                 <div class="reset" style="visibility: hidden;">selected: <span class="filter"></span>
                     <a href="javascript:yearRingChart.filterAll();dc.redrawAll();">reset</a>
@@ -72,9 +71,10 @@
                         yearDim  = ndx.dimension(function(d) {return +d.Year;}),
                         spendDim = ndx.dimension(function(d) {return Math.floor(d.Spent/10);}),
                         nameDim  = ndx.dimension(function(d) {return d.Name;}),
-                        spendPerYear = yearDim.group().reduceSum(function(d) {return +d.Spent;}),
+                        spendPerYear = yearDim.group().reduceSum(function(d) {console.log(+d.Spent);return +d.Spent;}),
                         spendPerName = nameDim.group().reduceSum(function(d) {return +d.Spent;}),
                         spendHist    = spendDim.group().reduceCount();
+                        console.log(spendHist.all());
                 yearRingChart
                         .width(300)
                         .height(300)

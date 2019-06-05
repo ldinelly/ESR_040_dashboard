@@ -11,22 +11,21 @@
 	<body>
 		<h1>Antecipação de Recebíveis</h1>
 
-
-		<div id="receitaDoMes">
-			<strong>Acompanhamento: <br/>Operações de Desconto de Duplicatas</strong>
-			<span class="reset" style="display: none;">Selected: <span class="filter"></span></span>
-			<a class="reset" href="javascript:receitaDoMesChart.filterAll();dc.redrawAll();" style="display: none;">reset</a>
-
-			<div class="clearfix"></div>
+		<div id="chart-ring-year" style="width:300px; height:330px">
+			<div class="reset" style="visibility: hidden;">selected: <span class="filter"></span>
+				<a href="javascript:yearRingChart.filterAll();dc.redrawAll();">reset</a>
+			</div>
 		</div>
 
-
-		<div id="totalEmCustodia">
-			<strong>Valor Custodiado</strong>
-			<span class="reset" style="display: none;">Selected: <span class="filter"></span></span>
-			<a class="reset" href="javascript:totalEmCustodiaChart.filterAll();dc.redrawAll();" style="display: none;">reset</a>
-
-			<div class="clearfix"></div>
+		<div id="chart-hist-spend" style="width:300px; height:330px">
+			<div class="reset" style="visibility: hidden;">range: <span class="filter"></span>
+				<a href="javascript:spendHistChart.filterAll();dc.redrawAll();">reset</a>
+			</div>
+		</div>
+		<div id="chart-row-spenders">
+			<div class="reset" style="visibility: hidden;">selected: <span class="filter"></span>
+				<a href="javascript:spenderRowChart.filterAll();dc.redrawAll();">reset</a>
+			</div>
 		</div>
 
 		<div>
@@ -44,9 +43,9 @@
 		<script src="http://unpkg.com/dc@3/dc.js"></script>
 
 		<script>
-
-			var receitaDoMesChart = dc.barChart("#receitaDoMes"),
-				totalEmCustodiaChart = dc.barChart("#totalEmCustodia"),
+			var yearRingChart   = dc.pieChart("#chart-ring-year"),
+				spendHistChart  = dc.barChart("#chart-hist-spend"),
+				spenderRowChart = dc.rowChart("#chart-row-spenders"),
 				visCount = dc.dataCount(".dc-data-count"),
 				visTable = dc.dataTable(".dc-data-table");
 
@@ -61,47 +60,47 @@
 				data.forEach(function (d) {
 					d.dd = dateFormatParser(d.date);
 					d.month = d3.timeMonth(d.dd);
-					console.log(d.dd.getMonth() + '/' + d.dd.getFullYear());
+					console.log(d.Pago);
 				});
 				var ndx = crossfilter(data),
 					all = ndx.groupAll(),
-					runDimension        = ndx.dimension(function(d) {return +d.Atraso;}),
-					speedSumGroup       = runDimension.group().reduceSum(function(d) {return d.Pago/1000 ;});
+					anoDim = ndx.dimension(function (d) { return +d.dd.getFullYear(); }),
+					atrasoDim = ndx.dimension(function (d) { return +d.Atraso; }),
+					nomeDim = ndx.dimension(function (d) { return d.Nome; }),
+					atrasoPerYear = anoDim.group().reduceSum(function (d) { return +d.Atraso; }),
+					atrasoPerNome = nomeDim.group().reduceSum(function (d) { return +d.Atraso; }),
+					atrasoHist    = atrasoDim.group().reduceCount();
 
-				var dateDimension = ndx.dimension(function (d) {
-					return d.dd;
-				});
+				yearRingChart
+					.width(300)
+					.height(300)
+					.dimension(anoDim)
+					.group(atrasoPerYear)
+					.innerRadius(50)
+					.controlsUseVisibility(true);
 
-				// Dimension by month
-				var moveMonths = ndx.dimension(function (d) {
-					return d.month;
-				});
+				spendHistChart
+					.dimension(atrasoDim)
+					.group(atrasoHist)
+					.x(d3.scaleLinear().domain([0,10]))
+					.elasticY(true)
+					.controlsUseVisibility(true);
+				spendHistChart.xAxis().tickFormat(function(d) {return d*10}); // convert back to base unit
+				spendHistChart.yAxis().ticks(2);
 
-				var dateDimensionGrou = dateDimension.group();
 
-
-				receitaDoMesChart
-					.x(d3.scaleLinear().domain([0,6]))
-					.brushOn(false)
-					.yAxisLabel("Desconto de Duplicatas")
-					.dimension(runDimension)
-					.group(speedSumGroup)
-					.elasticX(true);
-
-				totalEmCustodiaChart
-					.x(d3.scaleLinear().domain([0,6]))
-					.brushOn(false)
-					.yAxisLabel("Valor Custodiado")
-					.dimension(runDimension)
-					.group(speedSumGroup)
-					.elasticX(true);
+				spenderRowChart
+					.dimension(nomeDim)
+					.group(atrasoPerNome)
+					.elasticX(true)
+					.controlsUseVisibility(true);
 
 				visCount
 					.dimension(ndx)
 					.group(all);
 
 				visTable
-					.dimension(dateDimension)
+					.dimension(anoDim)
 					.showSections(false)
 					// Data table does not use crossfilter group but rather a closure
 					// as a grouping function
