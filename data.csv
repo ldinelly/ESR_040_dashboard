@@ -1,5 +1,4 @@
-date,Ord,Atraso,Total Pago,antecipado,custodiado,Nome,CNPJ, Unidade, Produto
-
+date,Ord,Atraso,Total Pago,antecipado,custodiado,Nome,CNPJ
 2015-01-10,25,5,R$49000,R$29000,R$76000,Luana Cristina,12345678910
 2014-02-25,00,2,R$39000,R$29000,R$76000,Levi Cauê André,12345678910
 2013-03-03,25,5,R$34000,R$29000,R$76000,Priscila Marcos,12345678910
