@@ -52,7 +52,7 @@
 
 
 			var url = "data.csv";
-			var dateFormatSpecifier = '%m/%d/%Y';
+			var dateFormatSpecifier = '%Y-%m-%d';
 			var dateFormat = d3.timeFormat(dateFormatSpecifier);
 			var dateFormatParser = d3.timeParse(dateFormatSpecifier);
 
@@ -61,12 +61,24 @@
 				data.forEach(function (d) {
 					d.dd = dateFormatParser(d.date);
 					d.month = d3.timeMonth(d.dd);
+					console.log(d.dd.getMonth() + '/' + d.dd.getFullYear());
 				});
-
 				var ndx = crossfilter(data),
 					all = ndx.groupAll(),
 					runDimension        = ndx.dimension(function(d) {return +d.Atraso;}),
 					speedSumGroup       = runDimension.group().reduceSum(function(d) {return d.Pago/1000 ;});
+
+				var dateDimension = ndx.dimension(function (d) {
+					return d.dd;
+				});
+
+				// Dimension by month
+				var moveMonths = ndx.dimension(function (d) {
+					return d.month;
+				});
+
+				var dateDimensionGrou = dateDimension.group();
+
 
 				receitaDoMesChart
 					.x(d3.scaleLinear().domain([0,6]))
@@ -89,10 +101,10 @@
 					.group(all);
 
 				visTable
-					.dimension(runDimension)
+					.dimension(dateDimension)
+					.showSections(false)
 					// Data table does not use crossfilter group but rather a closure
 					// as a grouping function
-					.group(speedSumGroup)
 					.columns([ //Colunas que aparecem na tabela da dash
 						"Ord",
 						"Nome",

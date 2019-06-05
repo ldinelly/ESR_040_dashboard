@@ -1,226 +1,141 @@
-<html lang='en'>
-<head>
-    <meta charset='utf-8'>
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>dc.js - Downloading Data Table Contents</title>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" type="text/css" href="../css/bootstrap.min.css">
+        <link rel="stylesheet" type="text/css" href="../css/dc.css"/>
+        <style>
+            #table td {
+                padding-left: 10px;
+            }
+        </style>
+    </head>
+    <body>
 
-    <style>
-        .bar {
-            fill: steelblue;
-        }
-        .bar:hover {
-            fill: brown;
-        }
+        <div class="container">
+            <script type="text/javascript" src="header.js"></script>
+            <div id="chart-ring-year" style="width:300px; height:330px">
+                <div class="reset" style="visibility: hidden;">selected: <span class="filter"></span>
+                    <a href="javascript:yearRingChart.filterAll();dc.redrawAll();">reset</a>
+                </div>
+            </div>
+            <div id="chart-hist-spend" style="width:300px; height:330px">
+                <div class="reset" style="visibility: hidden;">range: <span class="filter"></span>
+                    <a href="javascript:spendHistChart.filterAll();dc.redrawAll();">reset</a>
+                </div>
+            </div>
+            <div id="chart-row-spenders">
+                <div class="reset" style="visibility: hidden;">selected: <span class="filter"></span>
+                    <a href="javascript:spenderRowChart.filterAll();dc.redrawAll();">reset</a>
+                </div>
+            </div>
+            <!-- not sure why all these styles necessary, not the point of this -->
+            <div style="clear: both; margin: 30px; float: left">
+                <div id="table"></div>
+                <div id="download-type" style="clear: both; float: left">
+                    <div><label><input type=radio name="operation" value="raw" checked="true">&nbsp;all data</label></div>
+                    <div><label><input type=radio name="operation" value="table">&nbsp;table data</label></div>
+                </div>
+                <div style="float: left">
+                    <button class="btn" id="download">download</button>
+                </div>
+            </div>
 
-        .arc text {
-            font: 10px sans-serif;
-            text-anchor: middle;
-        }
 
-        .arc path {
-            stroke: #fff;
-        }
-    </style>
+            <script type="text/javascript" src="../js/promise-polyfill.js"></script>
+            <script type="text/javascript" src="../js/fetch.umd.js"></script>
+            <script type="text/javascript" src="../js/d3.js"></script>
+            <script type="text/javascript" src="../js/crossfilter.js"></script>
+            <script type="text/javascript" src="../js/dc.js"></script>
+            <script type="text/javascript" src="../js/FileSaver.js"></script>
+            <script type="text/javascript">
+                var yearRingChart   = dc.pieChart("#chart-ring-year"),
+                        spendHistChart  = dc.barChart("#chart-hist-spend"),
+                        spenderRowChart = dc.rowChart("#chart-row-spenders");
+                var table = dc.dataTable('#table');
+                // use static or load via d3.csv("spendData.csv").then(function(spendData) {/* do stuff */});
+                var spendData = [
+                    {Name: 'Mr A', Spent: '$40', Year: 2011},
+                    {Name: 'Mr B', Spent: '$10', Year: 2011},
+                    {Name: 'Mr C', Spent: '$40', Year: 2011},
+                    {Name: 'Mr A', Spent: '$70', Year: 2012},
+                    {Name: 'Mr B', Spent: '$20', Year: 2012},
+                    {Name: 'Mr B', Spent: '$50', Year: 2013},
+                    {Name: 'Mr C', Spent: '$30', Year: 2013}
+                ];
+                // normalize/parse data
+                spendData.forEach(function(d) {
+                    d.Spent = d.Spent.match(/\d+/)[0];
+                });
+                // set crossfilter
+                var ndx = crossfilter(spendData),
+                        yearDim  = ndx.dimension(function(d) {return +d.Year;}),
+                        spendDim = ndx.dimension(function(d) {return Math.floor(d.Spent/10);}),
+                        nameDim  = ndx.dimension(function(d) {return d.Name;}),
+                        spendPerYear = yearDim.group().reduceSum(function(d) {return +d.Spent;}),
+                        spendPerName = nameDim.group().reduceSum(function(d) {return +d.Spent;}),
+                        spendHist    = spendDim.group().reduceCount();
+                yearRingChart
+                        .width(300)
+                        .height(300)
+                        .dimension(yearDim)
+                        .group(spendPerYear)
+                        .innerRadius(50)
+                        .controlsUseVisibility(true);
+                spendHistChart
+                        .dimension(spendDim)
+                        .group(spendHist)
+                        .x(d3.scaleLinear().domain([0,10]))
+                        .elasticY(true)
+                        .controlsUseVisibility(true);
+                spendHistChart.xAxis().tickFormat(function(d) {return d*10}); // convert back to base unit
+                spendHistChart.yAxis().ticks(2);
+                spenderRowChart
+                        .dimension(nameDim)
+                        .group(spendPerName)
+                        .elasticX(true)
+                        .controlsUseVisibility(true);
+                var allDollars = ndx.groupAll().reduceSum(function(d) { return +d.Spent; });
+                table
+                        .dimension(spendDim)
+                        .sortBy(function(d) { return +d.Spent; })
+                        .showSections(false)
+                        .columns(['Name',
+                            {
+                                label: 'Spent',
+                                format: function(d) {
+                                    return '$' + d.Spent;
+                                }
+                            },
+                            'Year',
+                            {
+                                label: 'Percent of Total',
+                                format: function(d) {
+                                    return Math.floor((d.Spent / allDollars.value()) * 100) + '%';
+                                }
+                            }]);
+                d3.select('#download')
+                        .on('click', function() {
+                            var data = nameDim.top(Infinity);
+                            if(d3.select('#download-type input:checked').node().value==='table') {
+                                data = data.sort(function(a, b) {
+                                    return table.order()(table.sortBy()(a), table.sortBy()(b));
+                                });
+                                data = data.map(function(d) {
+                                    var row = {};
+                                    table.columns().forEach(function(c) {
+                                        row[table._doColumnHeaderFormat(c)] = table._doColumnValueFormat(c, d);
+                                    });
+                                    return row;
+                                });
+                            }
+                            var blob = new Blob([d3.csvFormat(data)], {type: "text/csv;charset=utf-8"});
+                            saveAs(blob, 'data.csv');
+                        });
+                dc.renderAll();
+            </script>
 
-    <title>Donut & Bar charts</title>
-    <script src='https://d3js.org/d3.v5.js' charset='utf-8'></script>
-    <script src='https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js'></script>
-</head>
-
-<body>
-
-<div id='year-selector-container'>
-    <input id='year-slider' class='year-range' type='range' min='2000' max='2005' value='2004'>
-    Year: <span id='year-span'>2004</span>
-</div>
-
-<div id='type-selector-container'>
-    <form id='type-selector'>
-        <input type='radio' name='type-selector' id='rb-1' value='type1' checked />
-        <label for='rb-1'>Type 1</label>
-
-        <input type='radio' name='type-selector' id='rb-2' value='type2' />
-        <label for='rb-2'>Type 2</label>
-
-        <input type='radio' name='type-selector' id='rb-3' value='type3' />
-        <label for='rb-3'>Type 3</label>
-    </form>
-</div>
-
-<div id='barchart'></div>
-<div id='donutchart'></div>
-
-<script>
-    /////////////////////////////////////////////////
-    // SHARED CODE
-    /////////////////////////////////////////////////
-    var data = [
-        {"year": 2000, "type1": 30, "type2": 40, "type3": 30},
-        {"year": 2001, "type1": 75.5, "type2": 4.5, "type3": 30},
-        {"year": 2002, "type1": 0, "type2": 90, "type3": 10},
-        {"year": 2003, "type1": 15, "type2": 20, "type3": 65},
-        {"year": 2004, "type1": 20, "type2": 40, "type3": 40},
-        {"year": 2005, "type1": 50, "type2": 25, "type3": 25}
-    ];
-
-    var updateRadio = function() {
-        typeSelected = document.querySelector('input[name=type-selector]:checked', '#type-selector').value;
-        console.log('typeSelected:', typeSelected);
-        d3.selectAll('rect').remove();
-        drawBar(getDataFromType(typeSelected));
-    }
-
-    var updateSlider = function() {
-        var slider = document.getElementById('year-slider');
-        var output = document.getElementById('year-span');
-        yearSelected = slider.value;
-        output.innerHTML = yearSelected;
-        console.log('yearSelected:', yearSelected);
-        d3.selectAll('.svgG').remove();
-        drawDonut(getDataFromYear(yearSelected));
-    }
-
-    d3.select('#type-selector').on('change', updateRadio);
-    d3.select('#year-slider').on('input', updateSlider);
-
-    var yearSelected = d3.select('#year-span').text();
-    var typeSelected = document.querySelector('input[name=type-selector]:checked', '#type-selector').value;
-    console.log('yearSelected:', yearSelected);
-    console.log('typeSelected:', typeSelected);
-
-    /////////////////////////////////////////////////
-    // BAR
-    /////////////////////////////////////////////////
-    var svgBar = d3.select("#barchart").append("svg").attr("width", 450).attr("height", 200);
-    var marginBar = {top: 20, right: 20, bottom: 30, left: 40};
-    var widthBar = +svgBar.attr("width") - marginBar.left - marginBar.right;
-    var heightBar = +svgBar.attr("height") - marginBar.top - marginBar.bottom;
-    var xBar = d3.scaleBand().rangeRound([0, widthBar]).padding(0.1);
-    var yBar = d3.scaleLinear().rangeRound([heightBar, 0]);
-
-    createBar(data);
-    function createBar(data) {
-        var g = svgBar.append("g").attr('id', 'gBar').attr("transform", "translate(" + marginBar.left + ", " + marginBar.top + ")");
-
-        xBar.domain(data.map(function(d) {
-            return d.year;
-        }));
-        yBar.domain([0, d3.max(data, function(d) {
-            if(typeSelected == 'type1') return d.type1;
-            if(typeSelected == 'type2') return d.type2;
-            if(typeSelected == 'type2') return d.type3;
-        })]);
-
-        g.append("g")
-            .attr("class", "axis axis--x")
-            .attr("transform", "translate(0," + heightBar + ")")
-            .call(d3.axisBottom(xBar));
-
-        g.append("g")
-            .attr("class", "axis axis--y")
-            .call(d3.axisLeft(yBar).ticks(10, "%"))
-            .append("text")
-            .attr("transform", "rotate(-90)")
-            .attr("y", 6)
-            .attr("dy", "0.71em")
-            .attr("text-anchor", "end");
-
-        var initialData = getDataFromType('type1');
-        drawBar(initialData, heightBar);
-    }
-
-    // return the right data
-    function getDataFromType(type) {
-        var arr = [];
-        data.forEach(function(item) {
-            if(type == 'type1') arr.push({"year": item.year, "value": item.type1});
-            if(type == 'type2') arr.push({"year": item.year, "value": item.type2});
-            if(type == 'type3') arr.push({"year": item.year, "value": item.type3});
-        });
-        return arr;
-    }
-
-    // draw barchart
-    function drawBar(mydata, height) {
-        d3.select('#gBar').selectAll(".bar")
-            .data(mydata)
-            .enter().append("rect")
-            .attr("class", "bar")
-            .attr("x", function(d) {
-                return xBar(d.year);
-            })
-            .attr("y", function(d) {
-                return yBar(d.value);
-            })
-            .attr("width", xBar.bandwidth())
-            .attr("height", function(d) {
-                return heightBar - yBar(d.value);
-            });
-    } // end draw
-
-    /////////////////////////////////////////////////
-    // DONUT
-    /////////////////////////////////////////////////
-    var widthDonut = 400;
-    var heightDonut = 200;
-    var radiusDonut = Math.min(widthDonut, heightDonut) / 2;
-    var colorDonut = d3.scaleOrdinal()
-        .range(["#98abc5", "#8a89a6", "#7b6888", "#6b486b", "#a05d56", "#d0743c", "#ff8c00"]);
-    var arcDonut = d3.arc()
-        .outerRadius(radiusDonut - 10)
-        .innerRadius(radiusDonut - 60);
-    var pieDonut = d3.pie()
-        .sort(null)
-        .value(function(d) {
-            return d.value;
-        });
-    var svgDonut = d3.select("#donutchart").append("svg")
-        .attr("width", widthDonut)
-        .attr("height", heightDonut);
-    var dataNestDonut = d3.nest()
-        .key(function(d) {
-            return d.year;
-        })
-        .object(data);
-
-    createDonut();
-    function createDonut() {
-        var initialData = getDataFromYear(yearSelected);
-        drawDonut(initialData);
-    }
-
-    // return the right data
-    function getDataFromYear(year) {
-        var filterData = dataNestDonut[year].slice();
-        var arr = [{"typeData": "type1", "value": filterData[0].type1}, {"typeData": "type2", "value": filterData[0].type2}, {"typeData": "type3", "value": filterData[0].type3}];
-        return arr;
-    }
-
-    function drawDonut(data) {
-        var svgG = svgDonut.append("g")
-            .attr('class', 'svgG')
-            .attr("transform", "translate(" + widthDonut / 2 + "," + heightDonut / 2 + ")");
-
-        var g = svgG.selectAll(".arc")
-            .data(pieDonut(data))
-            .enter()
-            .append("g")
-            .attr("class", "arc");
-
-        g.append("path")
-            .attr("d", arcDonut)
-            .style("fill", function(d) {
-                return colorDonut(d.data.typeData);
-            });
-
-        g.append("text")
-            .attr("transform", function(d) {
-                return "translate(" + arcDonut.centroid(d) + ")";
-            })
-            .attr("dy", ".35em")
-            .text(function(d) {
-                return d.data.typeData;
-            });
-    }
-</script>
-
-</body>
+        </div>
+    </body>
 </html>
