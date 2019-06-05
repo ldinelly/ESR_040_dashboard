@@ -9,18 +9,15 @@
 // Create chart objects associated with the container elements identified by the css selector.
 // Note: It is often a good idea to have these objects accessible at the global scope so that they can be modified or
 // filtered by other page controls.
+var gainOrLossChart = dc.pieChart('#gain-loss-chart');
+var fluctuationChart = dc.barChart('#fluctuation-chart');
+var quarterChart = dc.pieChart('#quarter-chart');
+var dayOfWeekChart = dc.rowChart('#day-of-week-chart');
+var moveChart = dc.lineChart('#monthly-move-chart');
 var volumeChart = dc.barChart('#monthly-volume-chart');
+var yearlyBubbleChart = dc.bubbleChart('#yearly-bubble-chart');
 var nasdaqCount = dc.dataCount('.dc-data-count');
 var nasdaqTable = dc.dataTable('.dc-data-table');
-
-
-
-
-
-var fluctuationChart = dc.barChart('#fluctuation-chart');
-var moveChart = dc.lineChart('#monthly-move-chart');
-
-
 
 // ### Anchor Div for Charts
 /*
@@ -29,16 +26,13 @@ var moveChart = dc.lineChart('#monthly-move-chart');
 // Title or anything you want to add above the chart
     <div id='chart'><span>Days by Gain or Loss</span></div>
 // ##### .turnOnControls()
-
 // If a link with css class `reset` is present then the chart
 // will automatically hide/show it based on whether there is a filter
 // set on the chart (e.g. slice selection for pie chart and brush
 // selection for bar chart). Enable this with `chart.turnOnControls(true)`
-
 // By default, dc.js >=2.1 uses `display: none` to control whether or not chart
 // controls are shown. To use `visibility: hidden` to hide/show controls
 // without disrupting the layout, set `chart.controlsUseVisibility(true)`.
-
     <div id='chart'>
        <a class='reset'
           href='javascript:myChart.filterAll();dc.redrawAll();'
@@ -203,6 +197,175 @@ d3.csv('ndx.csv').then(function (data) {
 	// [dc.js API Reference](https://github.com/dc-js/dc.js/blob/master/web/docs/api-latest.md) for more information
 	//
 
+	//#### Bubble Chart
+
+	//Create a bubble chart and use the given css selector as anchor. You can also specify
+	//an optional chart group for this chart to be scoped within. When a chart belongs
+	//to a specific group then any interaction with the chart will only trigger redraws
+	//on charts within the same chart group.
+	// <br>API: [Bubble Chart](https://github.com/dc-js/dc.js/blob/master/web/docs/api-latest.md#bubble-chart)
+
+	yearlyBubbleChart /* dc.bubbleChart('#yearly-bubble-chart', 'chartGroup') */
+	// (_optional_) define chart width, `default = 200`
+		.width(990)
+		// (_optional_) define chart height, `default = 200`
+		.height(250)
+		// (_optional_) define chart transition duration, `default = 750`
+		.transitionDuration(1500)
+		.margins({top: 10, right: 50, bottom: 30, left: 40})
+		.dimension(yearlyDimension)
+		//The bubble chart expects the groups are reduced to multiple values which are used
+		//to generate x, y, and radius for each key (bubble) in the group
+		.group(yearlyPerformanceGroup)
+		// (_optional_) define color function or array for bubbles: [ColorBrewer](http://colorbrewer2.org/)
+		.colors(d3.schemeRdYlGn[9])
+		//(optional) define color domain to match your data domain if you want to bind data or color
+		.colorDomain([-500, 500])
+		//##### Accessors
+
+		//Accessor functions are applied to each value returned by the grouping
+
+		// `.colorAccessor` - the returned value will be passed to the `.colors()` scale to determine a fill color
+		.colorAccessor(function (d) {
+			return d.value.absGain;
+		})
+		// `.keyAccessor` - the `X` value will be passed to the `.x()` scale to determine pixel location
+		.keyAccessor(function (p) {
+			return p.value.absGain;
+		})
+		// `.valueAccessor` - the `Y` value will be passed to the `.y()` scale to determine pixel location
+		.valueAccessor(function (p) {
+			return p.value.percentageGain;
+		})
+		// `.radiusValueAccessor` - the value will be passed to the `.r()` scale to determine radius size;
+		//   by default this maps linearly to [0,100]
+		.radiusValueAccessor(function (p) {
+			return p.value.fluctuationPercentage;
+		})
+		.maxBubbleRelativeSize(0.3)
+		.x(d3.scaleLinear().domain([-2500, 2500]))
+		.y(d3.scaleLinear().domain([-100, 100]))
+		.r(d3.scaleLinear().domain([0, 4000]))
+		//##### Elastic Scaling
+
+		//`.elasticY` and `.elasticX` determine whether the chart should rescale each axis to fit the data.
+		.elasticY(true)
+		.elasticX(true)
+		//`.yAxisPadding` and `.xAxisPadding` add padding to data above and below their max values in the same unit
+		//domains as the Accessors.
+		.yAxisPadding(100)
+		.xAxisPadding(500)
+		// (_optional_) render horizontal grid lines, `default=false`
+		.renderHorizontalGridLines(true)
+		// (_optional_) render vertical grid lines, `default=false`
+		.renderVerticalGridLines(true)
+		// (_optional_) render an axis label below the x axis
+		.xAxisLabel('Index Gain')
+		// (_optional_) render a vertical axis lable left of the y axis
+		.yAxisLabel('Index Gain %')
+		//##### Labels and  Titles
+
+		//Labels are displayed on the chart for each bubble. Titles displayed on mouseover.
+		// (_optional_) whether chart should render labels, `default = true`
+		.renderLabel(true)
+		.label(function (p) {
+			return p.key;
+		})
+		// (_optional_) whether chart should render titles, `default = false`
+		.renderTitle(true)
+		.title(function (p) {
+			return [
+				p.key,
+				'Index Gain: ' + numberFormat(p.value.absGain),
+				'Index Gain in Percentage: ' + numberFormat(p.value.percentageGain) + '%',
+				'Fluctuation / Index Ratio: ' + numberFormat(p.value.fluctuationPercentage) + '%'
+			].join('\n');
+		})
+		//#### Customize Axes
+
+		// Set a custom tick format. Both `.yAxis()` and `.xAxis()` return an axis object,
+		// so any additional method chaining applies to the axis, not the chart.
+		.yAxis().tickFormat(function (v) {
+		return v + '%';
+	});
+
+	// #### Pie/Donut Charts
+
+	// Create a pie chart and use the given css selector as anchor. You can also specify
+	// an optional chart group for this chart to be scoped within. When a chart belongs
+	// to a specific group then any interaction with such chart will only trigger redraw
+	// on other charts within the same chart group.
+	// <br>API: [Pie Chart](https://github.com/dc-js/dc.js/blob/master/web/docs/api-latest.md#pie-chart)
+
+	gainOrLossChart /* dc.pieChart('#gain-loss-chart', 'chartGroup') */
+	// (_optional_) define chart width, `default = 200`
+		.width(180)
+		// (optional) define chart height, `default = 200`
+		.height(180)
+		// Define pie radius
+		.radius(80)
+		// Set dimension
+		.dimension(gainOrLoss)
+		// Set group
+		.group(gainOrLossGroup)
+		// (_optional_) by default pie chart will use `group.key` as its label but you can overwrite it with a closure.
+		.label(function (d) {
+			if (gainOrLossChart.hasFilter() && !gainOrLossChart.hasFilter(d.key)) {
+				return d.key + '(0%)';
+			}
+			var label = d.key;
+			if (all.value()) {
+				label += '(' + Math.floor(d.value / all.value() * 100) + '%)';
+			}
+			return label;
+		})
+	/*
+		// (_optional_) whether chart should render labels, `default = true`
+		.renderLabel(true)
+		// (_optional_) if inner radius is used then a donut chart will be generated instead of pie chart
+		.innerRadius(40)
+		// (_optional_) define chart transition duration, `default = 350`
+		.transitionDuration(500)
+		// (_optional_) define color array for slices
+		.colors(['#3182bd', '#6baed6', '#9ecae1', '#c6dbef', '#dadaeb'])
+		// (_optional_) define color domain to match your data domain if you want to bind data or color
+		.colorDomain([-1750, 1644])
+		// (_optional_) define color value accessor
+		.colorAccessor(function(d, i){return d.value;})
+		*/;
+
+	quarterChart /* dc.pieChart('#quarter-chart', 'chartGroup') */
+		.width(180)
+		.height(180)
+		.radius(80)
+		.innerRadius(30)
+		.dimension(quarter)
+		.group(quarterGroup);
+
+	//#### Row Chart
+
+	// Create a row chart and use the given css selector as anchor. You can also specify
+	// an optional chart group for this chart to be scoped within. When a chart belongs
+	// to a specific group then any interaction with such chart will only trigger redraw
+	// on other charts within the same chart group.
+	// <br>API: [Row Chart](https://github.com/dc-js/dc.js/blob/master/web/docs/api-latest.md#row-chart)
+	dayOfWeekChart /* dc.rowChart('#day-of-week-chart', 'chartGroup') */
+		.width(180)
+		.height(180)
+		.margins({top: 20, left: 10, right: 10, bottom: 20})
+		.group(dayOfWeekGroup)
+		.dimension(dayOfWeek)
+		// Assign colors to each value in the x scale domain
+		.ordinalColors(['#3182bd', '#6baed6', '#9ecae1', '#c6dbef', '#dadaeb'])
+		.label(function (d) {
+			return d.key.split('.')[1];
+		})
+		// Title sets the row text
+		.title(function (d) {
+			return d.value;
+		})
+		.elasticX(true)
+		.xAxis().ticks(4);
 
 	//#### Bar Chart
 
@@ -254,7 +417,7 @@ d3.csv('ndx.csv').then(function (data) {
 		.mouseZoomable(true)
 		// Specify a "range chart" to link its brush extent with the zoom of the current "focus chart".
 		.rangeChart(volumeChart)
-		.x(d3.scaleTime().domain([new Date(2018, 0, 1), new Date(2019, 11, 31)]))
+		.x(d3.scaleTime().domain([new Date(1985, 0, 1), new Date(2012, 11, 31)]))
 		.round(d3.timeMonth.round)
 		.xUnits(d3.timeMonths)
 		.elasticY(true)
@@ -296,7 +459,7 @@ d3.csv('ndx.csv').then(function (data) {
 		.group(volumeByMonthGroup)
 		.centerBar(true)
 		.gap(1)
-		.x(d3.scaleTime().domain([new Date(2018, 0, 1), new Date(2019, 11, 31)]))
+		.x(d3.scaleTime().domain([new Date(1985, 0, 1), new Date(2012, 11, 31)]))
 		.round(d3.timeMonth.round)
 		.alwaysUseRounding(true)
 		.xUnits(d3.timeMonths);
@@ -369,8 +532,8 @@ d3.csv('ndx.csv').then(function (data) {
 			// Use the `d.date` field; capitalized automatically
 			'date',
 			// Use `d.open`, `d.close`
-			'ord',
-			'atraso',
+			'open',
+			'close',
 			{
 				// Specify a custom format for column 'Change' by using a label with a function.
 				label: 'Change',
@@ -395,7 +558,6 @@ d3.csv('ndx.csv').then(function (data) {
 
 	/*
 	//#### Geo Choropleth Chart
-
 	//Create a choropleth chart and use the given css selector as anchor. You can also specify
 	//an optional chart group for this chart to be scoped within. When a chart belongs
 	//to a specific group then any interaction with such chart will only trigger redraw
@@ -434,9 +596,7 @@ d3.csv('ndx.csv').then(function (data) {
 		.title(function(d) {
 			return 'State: ' + d.key + '\nTotal Amount Raised: ' + numberFormat(d.value ? d.value : 0) + 'M';
 		});
-
 		//#### Bubble Overlay Chart
-
 		// Create a overlay bubble chart and use the given css selector as anchor. You can also specify
 		// an optional chart group for this chart to be scoped within. When a chart belongs
 		// to a specific group then any interaction with the chart will only trigger redraw
