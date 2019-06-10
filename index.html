@@ -44,7 +44,7 @@
 
 		<script>
 			var yearRingChart   = dc.pieChart("#chart-ring-year"),
-				histSpendChart   = dc.barChart("#chart-hist-spend"),
+				histSpendChart   = dc.lineChart("#chart-hist-spend"),
 				visCount = dc.dataCount(".dc-data-count"),
 				visTable = dc.dataTable(".dc-data-table"),
 				volumeChart = dc.barChart('#monthly-volume-chart');
@@ -100,23 +100,26 @@
 					.controlsUseVisibility(true);
 
 				histSpendChart
-					.width(768)
-					.height(380)
-					.x(d3.scaleTime().domain([new Date(1985, 0, 1), new Date(2012, 11, 31)]))
+					.renderArea(true)
+					.width(990)
+					.height(200)
+					.transitionDuration(1000)
+					.margins({top: 30, right: 50, bottom: 25, left: 40})
+					.dimension(mesDim)
+					.rangeChart(volumeChart)
+					.x(d3.scaleTime().domain([new Date(1995, 0, 1), new Date(2012, 11, 31)]))
+					.round(d3.timeMonth.round)
 					.xUnits(d3.timeMonths)
-					//.xUnits(dc.units.ordinal)
-					.dimension(anoDim)
+					.elasticY(true)
 					.renderHorizontalGridLines(true)
-					.group(volumePorMes,'fdefe')
+					.brushOn(false)
+					.group(volumePorMes, 'Monthly Index Average')
 					.valueAccessor(function (d) {
 						return d.value;
 					})
 					.stack(volumePorMesT, 'Monthly Index Move', function (d) {
 						return d.value;
-					})
-					.brushOn(false) //Desativa manipular o grafico
-					.rangeChart(volumeChart)//Linka o range apartir de outro grafico
-					.mouseZoomable(true);//Permite usar o mouse para ampliar ou diminuir o grafico
+					});//Permite usar o mouse para ampliar ou diminuir o grafico
 
 				volumeChart
 					.height(60)
