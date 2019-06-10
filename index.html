@@ -89,9 +89,8 @@
 					nomeDim = ndx.dimension(function (d) { return d.nome; }),
 					cnpjDim = ndx.dimension(function (d) { return d.cnpj; }),
 
-					anoMesPorCustodiado = custodiadoDim.group().reduceSum(function (d) { return d.dd; }),
-					totalPagoPorAnoMes = anoMesDim.group().reduceSum(function (d) { return d.totalPago; }),
-					totalPagoPorAno = anoDim.group().reduceSum(function (d) { return d.totalPago; });
+					custodiadoPorAnoMes = custodiadoDim.group().reduceSum(function (d) { return d.dd; }),
+					totalPagoPorAnoMes = anoMesDim.group().reduceSum(function (d) { return d.totalPago; });
 
 
 				totalEmCustodiaChart
@@ -103,10 +102,11 @@
 						.brushOn(false)
 						.xAxisLabel('Mes e Ano')
 						.yAxisLabel('Pago')
-						.dimension(anoMesDim)
+						.dimension(custodiadoDim)
 						.outerPadding(0.05)
 						.group(totalPagoPorAnoMes)
 						.rangeChart(filtroDePeriodoChart)
+						.mouseZoomable(false)
 						.controlsUseVisibility(true);
 
 				receitaDoMesChart
@@ -117,10 +117,12 @@
 					.brushOn(false)
 					.xAxisLabel('Mes e Ano')
 					.yAxisLabel('Pago')
-					.dimension(anoMesDim)
+					.mouseZoomable(false)
+					.dimension(custodiadoDim)
 					.outerPadding(0.05)
 					.group(totalPagoPorAnoMes)
 					.rangeChart(filtroDePeriodoChart)
+					.x(d3.scaleTime().domain([new Date(2009, 0, 1), new Date(2015, 1, 10)]))
 					.controlsUseVisibility(true);
 
 				filtroDePeriodoChart
