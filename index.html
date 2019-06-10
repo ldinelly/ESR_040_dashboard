@@ -11,19 +11,19 @@
 	<body>
 		<h1>Antecipação de Recebíveis</h1>
 
-		<div id="chart-totalEmCustodia" style="width:300px; height:330px">
+		<div id="chart-totalEmCustodia" style="width:100%; height:330px">
 			<div class="reset" style="visibility: hidden;">selected: <span class="filter"></span>
 				<a href="javascript:totalEmCustodiaChart.filterAll();dc.redrawAll();">reset</a>
 			</div>
 		</div>
 <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
-		<div id="chart-receitaDoMesChart" style="width:300px; height:330px">
+		<div id="chart-receitaDoMesChart" style="width:100%; height:330px">
 			<div class="reset" style="visibility: hidden;">range: <span class="filter"></span>
 				<a href="javascript:spendHistChart.filterAll();dc.redrawAll();">reset</a>
 			</div>
 		</div>
 
-		<div id="chart-filtroDePeriodo" style="width:80%; height:330px">
+		<div id="chart-filtroDePeriodo" style="margin-left: 30px; width:100%; height:330px">
 			<div class="reset" style="visibility: hidden;">range: <span class="filter"></span>
 				<a href="javascript:spendHistChart.filterAll();dc.redrawAll();">reset</a>
 			</div>
@@ -81,6 +81,7 @@
 
 					//ajustando as dimensões dos gráficos
 					anoDim = ndx.dimension(function (d) { return +d.dd.getFullYear(); }),
+					mesDim = ndx.dimension(function (d) { return +d.month; }),
 					anoMesDim = ndx.dimension(function (d) { return d.my; }),
 					totalPagoDim = ndx.dimension(function (d) { return +d.totalPago; }),
 					antecipadoDim = ndx.dimension(function (d) { return +d.antecipado; }),
@@ -90,12 +91,12 @@
 					cnpjDim = ndx.dimension(function (d) { return d.cnpj; }),
 
 					custodiadoPorAnoMes = custodiadoDim.group().reduceSum(function (d) { return d.dd; }),
-					totalPagoPorAnoMes = anoMesDim.group().reduceSum(function (d) { return d.totalPago; });
+					totalPagoPorAnoMes = anoMesDim.group().reduceSum(function (d) { return d.totalPago; }),
+					totalPagoPorMes = mesDim.group().reduceSum(function (d) { return d.totalPago; });
 
 
 				totalEmCustodiaChart
-						.width(300)
-						.width(578)
+					.width(500)
 						.height(200)
 						.x(d3.scaleBand())
 						.xUnits(dc.units.ordinal)
@@ -106,38 +107,28 @@
 						.outerPadding(0.05)
 						.group(totalPagoPorAnoMes)
 						.rangeChart(filtroDePeriodoChart)
-						.mouseZoomable(false)
-						.controlsUseVisibility(true);
+					.renderHorizontalGridLines(true)
+						.mouseZoomable(false);
 
 				receitaDoMesChart
-					.width(578)
 					.height(200)
 					.x(d3.scaleBand())
 					.xUnits(dc.units.ordinal)
 					.brushOn(false)
-					.xAxisLabel('Mes e Ano')
-					.yAxisLabel('Pago')
-					.mouseZoomable(false)
-					.dimension(custodiadoDim)
-					.outerPadding(0.05)
-					.group(totalPagoPorAnoMes)
-					.rangeChart(filtroDePeriodoChart)
-					.x(d3.scaleTime().domain([new Date(2009, 0, 1), new Date(2015, 1, 10)]))
-					.controlsUseVisibility(true);
+					.dimension(mesDim)
+					.group(totalPagoPorMes)
+					.renderHorizontalGridLines(true);
 
 				filtroDePeriodoChart
 						.height(80)
-						.x(d3.scaleBand())
-						.xUnits(dc.units.ordinal)
 						.brushOn(true)
-						.elasticY(true)
-						.margins({top: 30, right: 50, bottom: 25, left: -2})
+						.margins({top: 0, right: 50, bottom: 25, left: -1})
 						.xUnits(d3.timeMonths)
-						.x(d3.scaleTime().domain([new Date(2009, 0, 1), new Date(2015, 1, 10)]))
-						.dimension(anoMesDim)
-						.outerPadding(0.05)
-						.group(totalPagoPorAnoMes)
-						.controlsUseVisibility(true);
+						.x(d3.scaleTime().domain([new Date(2008, 0, 1), new Date(2015, 11, 31)]))
+						.round(d3.timeMonth.round)
+						.alwaysUseRounding(true)
+						.dimension(mesDim)
+						.group(totalPagoPorMes);
 
 				visCount
 					.dimension(ndx)
