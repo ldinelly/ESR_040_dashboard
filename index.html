@@ -11,13 +11,19 @@
 	<body>
 		<h1>Antecipação de Recebíveis</h1>
 
-		<div id="chart-ring-year" style="width:300px; height:330px">
+		<div id="chart-totalEmCustodia" style="width:300px; height:330px">
 			<div class="reset" style="visibility: hidden;">selected: <span class="filter"></span>
-				<a href="javascript:yearRingChart.filterAll();dc.redrawAll();">reset</a>
+				<a href="javascript:totalEmCustodiaChart.filterAll();dc.redrawAll();">reset</a>
 			</div>
 		</div>
 <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
-		<div id="chart-hist-spend" style="width:300px; height:330px">
+		<div id="chart-receitaDoMesChart" style="width:300px; height:330px">
+			<div class="reset" style="visibility: hidden;">range: <span class="filter"></span>
+				<a href="javascript:spendHistChart.filterAll();dc.redrawAll();">reset</a>
+			</div>
+		</div>
+
+		<div id="chart-filtroDePeriodo" style="width:80%; height:330px">
 			<div class="reset" style="visibility: hidden;">range: <span class="filter"></span>
 				<a href="javascript:spendHistChart.filterAll();dc.redrawAll();">reset</a>
 			</div>
@@ -40,8 +46,9 @@
 		<script>
 
 			//criando as variáveis dos gráficos e tabelas
-			var yearRingChart   = dc.barChart("#chart-ring-year"),
-				histSpendChart   = dc.barChart("#chart-hist-spend"),
+			var totalEmCustodiaChart   = dc.barChart("#chart-totalEmCustodia"),
+				receitaDoMesChart   = dc.barChart("#chart-receitaDoMesChart"),
+				filtroDePeriodoChart  = dc.barChart("#chart-filtroDePeriodo"),
 				visCount = dc.dataCount(".dc-data-count"),
 				visTable = dc.dataTable(".dc-data-table");
 
@@ -87,32 +94,48 @@
 					totalPagoPorAno = anoDim.group().reduceSum(function (d) { return d.totalPago; });
 
 
-				yearRingChart
+				totalEmCustodiaChart
 						.width(300)
 						.width(578)
 						.height(200)
 						.x(d3.scaleBand())
 						.xUnits(dc.units.ordinal)
 						.brushOn(false)
-						.xAxisLabel('Mes Ano')
+						.xAxisLabel('Mes e Ano')
 						.yAxisLabel('Pago')
 						.dimension(anoMesDim)
 						.outerPadding(0.05)
 						.group(totalPagoPorAnoMes)
+						.rangeChart(filtroDePeriodoChart)
 						.controlsUseVisibility(true);
 
-				histSpendChart
+				receitaDoMesChart
 					.width(578)
 					.height(200)
 					.x(d3.scaleBand())
 					.xUnits(dc.units.ordinal)
 					.brushOn(false)
-					.xAxisLabel('Mes Ano')
+					.xAxisLabel('Mes e Ano')
 					.yAxisLabel('Pago')
 					.dimension(anoMesDim)
 					.outerPadding(0.05)
 					.group(totalPagoPorAnoMes)
+					.rangeChart(filtroDePeriodoChart)
 					.controlsUseVisibility(true);
+
+				filtroDePeriodoChart
+						.height(80)
+						.x(d3.scaleBand())
+						.xUnits(dc.units.ordinal)
+						.brushOn(true)
+						.elasticY(true)
+						.margins({top: 30, right: 50, bottom: 25, left: -2})
+						.xUnits(d3.timeMonths)
+						.x(d3.scaleTime().domain([new Date(2009, 0, 1), new Date(2015, 1, 10)]))
+						.dimension(anoMesDim)
+						.outerPadding(0.05)
+						.group(totalPagoPorAnoMes)
+						.controlsUseVisibility(true);
 
 				visCount
 					.dimension(ndx)
