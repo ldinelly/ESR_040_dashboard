@@ -30,8 +30,6 @@
         <a href="javascript:spendHistChart.filterAll();dc.redrawAll();">reset</a>
     </div>
 </div>
-
-
 <div>
     <div class="dc-data-count">
         <span class="filter-count"></span> selecionado de <span class="total-count"></span> dados. | <a
@@ -72,6 +70,9 @@
             d.totalPago = d.totalPago.match(/\d+/)[0];
             d.custodiado = d.custodiado.match(/\d+/)[0];
             d.antecipado = d.antecipado.match(/\d+/)[0];
+            d.cnpj = d.cnpj.substr(0,2) + '.' + d.cnpj.substr(2,3) + '.' + d.cnpj.substr(5,3) + '/' + d.cnpj.substr(8,4) + '-' + d.cnpj.substr(12,2); //formata o CNPJ com ./-
+            d.nome = d.nome;
+            d.ord = d.ord;
         });
 
         var ndx = crossfilter(data),
@@ -148,12 +149,32 @@
             // Data table does not use crossfilter group but rather a closure
             // as a grouping function
             .columns([ //Colunas que aparecem na tabela da dash
-                "date",
+                {
+                    label: 'date',
+                    format: function(d) {
+                        return d.dd.getDay() + '/' + (d.dd.getMonth()+1) + '/' + d.dd.getFullYear();
+                    }
+                },
                 "ord",
                 "atraso",
-                "totalPago",
-                "antecipado",
-                "custodiado",
+                {
+                    label: 'totalPago',
+                    format: function(d) {
+                        return 'R$ ' + d.totalPago;
+                    }
+                },
+                {
+                    label: 'antecipado',
+                    format: function(d) {
+                        return 'R$ ' + d.antecipado;
+                    }
+                },
+                {
+                    label: 'custodiado',
+                    format: function(d) {
+                        return '$' + d.custodiado;
+                    }
+                },
                 "nome",
                 "cnpj"
             ]);
