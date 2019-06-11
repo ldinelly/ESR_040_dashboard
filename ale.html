@@ -44,14 +44,14 @@
 
 		<script>
 			var yearRingChart   = dc.barChart("#chart-ring-year"),
-				histSpendChart   = dc.barChart("#chart-hist-spend"),
+				histSpendChart   = dc.compositeChart("#chart-hist-spend"),
 				visCount = dc.dataCount(".dc-data-count"),
 				visTable = dc.dataTable(".dc-data-table"),
 				volumeChart = dc.barChart('#monthly-volume-chart');
 
 
 			var url = "data.csv";
-			var dateFormatSpecifier = '%Y-%m-%d';
+			var dateFormatSpecifier = '%d/%m/%Y';
 			var dateFormat = d3.timeFormat(dateFormatSpecifier);
 			var dateFormatParser = d3.timeParse(dateFormatSpecifier);
 
@@ -105,7 +105,6 @@
 					.height(200)
 					//.transitionDuration(1000)
 					//.margins({top: 30, right: 50, bottom: 25, left: 40})
-					.dimension(mesDim)
 					.rangeChart(volumeChart)
 					.x(d3.scaleTime().domain([new Date(2010, 0, 1), new Date(2015, 11, 31)]))
 					.legend(dc.legend().x(800).y(10).itemHeight(13).gap(5))
@@ -114,13 +113,23 @@
 					.elasticY(true)
 					.renderHorizontalGridLines(true)
 					.brushOn(false)
-					.group(totalPagoPorMes, 'Pago')
-					.valueAccessor(function (d) {
-						return d.value;
-					})
-					.stack(antecipadoPorMes, 'Antecipado', function (d) {
-						return d.value;
-					});//Permite usar o mouse para ampliar ou diminuir o grafico
+					.compose([
+						dc.barChart(histSpendChart)
+							.dimension(mesDim)
+							.colors('red')
+							.group(totalPagoPorMes, "Pago")
+							.centerBar(true),
+						dc.barChart(histSpendChart)
+							.dimension(mesDim)
+							.colors('blue')
+							.group(antecipadoPorMes, "antecipado")
+							.centerBar(true),
+						dc.lineChart(histSpendChart)
+							.dimension(mesDim)
+							.colors('red')
+							.group(custodiadoPorMes, "Dots")
+							.dashStyle([2,2])
+					]);//Permite usar o mouse para ampliar ou diminuir o grafico
 
 				volumeChart
 					.height(60)
