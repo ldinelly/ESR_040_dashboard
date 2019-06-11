@@ -51,7 +51,7 @@
 
 
 			var url = "data.csv";
-			var dateFormatSpecifier = '%Y-%m-%d';
+			var dateFormatSpecifier = '%d/%m/%Y';
 			var dateFormat = d3.timeFormat(dateFormatSpecifier);
 			var dateFormatParser = d3.timeParse(dateFormatSpecifier);
 
@@ -119,6 +119,9 @@
 						return d.value;
 					})
 					.stack(antecipadoPorMes, 'Antecipado', function (d) {
+						return d.value;
+					})
+					.stack(custodiadoPorMes, 'Custodiado', function (d) {
 						return d.value;
 					});//Permite usar o mouse para ampliar ou diminuir o grafico
 
