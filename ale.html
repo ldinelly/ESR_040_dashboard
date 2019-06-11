@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<title>Antecipação de Recebíveis</title>
+
+		<link rel="stylesheet" href="dc.css">
+		<link rel="stylesheet" type="text/css" href="bootstrap.css">
+	</head>
+
+	<body>
+		<h1>Antecipação de Recebíveis</h1>
+
+		<div id="chart-ring-year" style="width:100%; height:330px">
+			<div class="reset" style="visibility: hidden;">selected: <span class="filter"></span>
+				<a href="javascript:yearRingChart.filterAll();dc.redrawAll();">reset</a>
+			</div>
+		</div>
+
+		<div id="chart-hist-spend" style="width:100%; height:330px">
+			<div class="reset" style="visibility: hidden;">range: <span class="filter"></span>
+				<a href="javascript:spendHistChart.filterAll();dc.redrawAll();">reset</a>
+			</div>
+		</div>
+		<div id="monthly-volume-chart" style="width: 90%; height: 80px; margin-left: 30px;" >
+			<div class="reset" style="visibility: hidden;">range: <span class="filter"></span>
+				<a href="javascript:spendHistChart.filterAll();dc.redrawAll();">reset</a>
+			</div>
+		</div>
+
+		<div>
+			<div class="dc-data-count">
+				<span class="filter-count"></span> selecionado de <span class="total-count"></span> dados. | <a
+					href="javascript:dc.filterAll(); dc.renderAll();">Resetar Tudo</a>
+			</div>
+		</div>
+		<table class="table table-hover dc-data-table">
+		</table>
+
+
+		<script src="https://d3js.org/d3.v5.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/crossfilter2/1.4.7/crossfilter.js"></script>
+		<script src="http://unpkg.com/dc@3/dc.js"></script>
+
+		<script>
+			var yearRingChart   = dc.barChart("#chart-ring-year"),
+				histSpendChart   = dc.barChart("#chart-hist-spend"),
+				visCount = dc.dataCount(".dc-data-count"),
+				visTable = dc.dataTable(".dc-data-table"),
+				volumeChart = dc.barChart('#monthly-volume-chart');
+
+
+			var url = "data.csv";
+			var dateFormatSpecifier = '%Y-%m-%d';
+			var dateFormat = d3.timeFormat(dateFormatSpecifier);
+			var dateFormatParser = d3.timeParse(dateFormatSpecifier);
+
+
+			d3.csv(url).then(function (data) {
+
+
+				//Tratamento dos dados recebido do csv
+				data.forEach(function (d) {
+					d.dd = dateFormatParser(d.date);
+					d.month = d3.timeMonth(d.dd);
+					d.my = (d.dd.getMonth()+1) + '/' + d.dd.getFullYear();
+					d.atraso = d.atraso.match(/\d+/)[0];
+					d.totalPago = d.totalPago.match(/\d+/)[0];
+					d.custodiado = d.custodiado.match(/\d+/)[0];
+					d.antecipado = d.antecipado.match(/\d+/)[0];
+				});
+
+				var ndx = crossfilter(data),
+					all = ndx.groupAll(),
+
+					anoDim = ndx.dimension(function (d) { return +d.dd.getFullYear(); }),
+					mesDim = ndx.dimension(function (d) { return d.month; }),
+					anoMesDim = ndx.dimension(function (d) { return d.my; }),
+					atrasoDim = ndx.dimension(function (d) { return +d.atraso; }),
+					totalPagoDim = ndx.dimension(function (d) { return +d.totalPago; }),
+					antecipadoDim = ndx.dimension(function (d) { return +d.antecipado; }),
+					custodiadoDim = ndx.dimension(function (d) { return +d.custodiado; }),
+
+					atrasoPorMes = mesDim.group().reduceSum(function (d) { return d.atraso; }),
+					antecipadoPorMes = mesDim.group().reduceSum(function (d) { return d.antecipado; }),
+					custodiadoPorMes = mesDim.group().reduceSum(function (d) { return d.custodiado; }),
+					totalPagoPorMes = mesDim.group().reduceSum(function (d) { return d.totalPago; });
+
+
+				//console.log(anoDim);
+				yearRingChart
+					.height(300)
+					.legend(dc.legend().x(800).y(10).itemHeight(13).gap(5))
+					.dimension(mesDim)
+					.group(custodiadoPorMes, 'Custodiado')
+					.x(d3.scaleTime().domain([new Date(2010, 0, 1), new Date(2015, 11, 31)]))
+					.xUnits(d3.timeMonths)
+					.brushOn(false)
+					.renderHorizontalGridLines(true)
+					.elasticY(true)
+					.rangeChart(histSpendChart);
+
+				histSpendChart
+					//.renderArea(true)
+					.height(200)
+					//.transitionDuration(1000)
+					//.margins({top: 30, right: 50, bottom: 25, left: 40})
+					.dimension(mesDim)
+					.rangeChart(volumeChart)
+					.x(d3.scaleTime().domain([new Date(2010, 0, 1), new Date(2015, 11, 31)]))
+					.legend(dc.legend().x(800).y(10).itemHeight(13).gap(5))
+					.round(d3.timeMonth.round)
+					.xUnits(d3.timeMonths)
+					.elasticY(true)
+					.renderHorizontalGridLines(true)
+					.brushOn(false)
+					.group(totalPagoPorMes, 'Pago')
+					.valueAccessor(function (d) {
+						return d.value;
+					})
+					.stack(antecipadoPorMes, 'Antecipado', function (d) {
+						return d.value;
+					});//Permite usar o mouse para ampliar ou diminuir o grafico
+
+				volumeChart
+					.height(60)
+					.margins({top: 0, right: 40, bottom: 20, left: -2})
+					.dimension(mesDim)
+					.group(totalPagoPorMes)
+					.centerBar(true)
+					.gap(1)
+					.elasticX(true)
+					.x(d3.scaleTime().domain([new Date(1985, 0, 1), new Date(2012, 11, 31)]))
+					.round(d3.timeMonth.round)
+					.alwaysUseRounding(true)
+					.xUnits(d3.timeMonths);
+
+				visCount
+					.dimension(ndx)
+					.group(all);
+
+				visTable
+					.dimension(anoDim)
+					// Data table does not use crossfilter group but rather a closure
+					// as a grouping function
+					.columns([ //Colunas que aparecem na tabela da dash
+						"date",
+						"open",
+						"high",
+						"low",
+						"close",
+						"volume",
+						"oi"
+					]);
+
+				dc.renderAll();
+
+			});
+		</script>
+	</body>
+</html>
