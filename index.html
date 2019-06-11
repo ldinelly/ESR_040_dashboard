@@ -11,7 +11,7 @@
 	<body>
 		<h1>Antecipação de Recebíveis</h1>
 
-		<div id="chart-ring-year" style="width:300px; height:330px">
+		<div id="chart-ring-year" style="width:100%; height:330px">
 			<div class="reset" style="visibility: hidden;">selected: <span class="filter"></span>
 				<a href="javascript:yearRingChart.filterAll();dc.redrawAll();">reset</a>
 			</div>
@@ -43,7 +43,7 @@
 		<script src="http://unpkg.com/dc@3/dc.js"></script>
 
 		<script>
-			var yearRingChart   = dc.pieChart("#chart-ring-year"),
+			var yearRingChart   = dc.barChart("#chart-ring-year"),
 				histSpendChart   = dc.lineChart("#chart-hist-spend"),
 				visCount = dc.dataCount(".dc-data-count"),
 				visTable = dc.dataTable(".dc-data-table"),
@@ -83,6 +83,7 @@
 					volumePorMes = mesDim.group().reduceSum(function (d) { return d.volume; }),
 					volumePorMesT = mesDim.group().reduceSum(function (d) { return d.volume - d.close; }),
 					openPorAnoMes = anoMesDim.group().reduceSum(function (d) { return d.open; }),
+					lowPorMes = mesDim.group().reduceSum(function (d) { return d.low; }),
 					lowPorAnoMes = anoMesDim.group().reduceSum(function (d) { return d.low; });
 
 
@@ -92,12 +93,15 @@
 
 				//console.log(anoDim);
 				yearRingChart
-					.width(300)
 					.height(300)
-					.dimension(anoDim)
-					.group(volumePorAno)
-					.innerRadius(50)
-					.controlsUseVisibility(true);
+					.dimension(mesDim)
+					.group(lowPorMes)
+					.x(d3.scaleTime().domain([new Date(1985, 0, 1), new Date(2012, 11, 31)]))
+					.xUnits(d3.timeMonths)
+					.brushOn(false)
+					.renderHorizontalGridLines(true)
+					.elasticY(true)
+					.rangeChart(histSpendChart);
 
 				histSpendChart
 					.renderArea(true)
